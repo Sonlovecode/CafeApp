@@ -1,0 +1,83 @@
+.home-page {
+  background-color: #1c1c1e;
+  color: #fff;
+  min-height: 100vh;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero {
+  padding: 60px 20px 30px;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #f5f5f7;
+}
+
+.hero-title span {
+  color: #d4a373;
+}
+
+.hero-subtitle {
+  color: #aaa;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+.slider-container {
+  width: 80%;
+  margin: 40px auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.carousel .slide img {
+  border-radius: 12px;
+  height: 400px;
+  object-fit: cover;
+}
+
+.legend {
+  background: rgba(0, 0, 0, 0.6) !important;
+  font-size: 1rem !important;
+  bottom: 10px !important;
+  border-radius: 6px;
+}
+
+.info {
+  margin-top: 50px;
+}
+
+.info h2 {
+  color: #d4a373;
+  margin-bottom: 30px;
+}
+
+.info-grid {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.info-card {
+  background: #2c2c2e;
+  padding: 20px;
+  border-radius: 10px;
+  width: 250px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transition: transform 0.2s;
+}
+
+.info-card h3 {
+  color: #f5f5f7;
+  margin-bottom: 10px;
+}
+
+.info-card p {
+  color: #ccc;
+  font-size: 0.9rem;
+}

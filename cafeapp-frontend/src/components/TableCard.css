@@ -1,0 +1,19 @@
+.table-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.table-card:hover {
+  background-color: #f8f8f8;
+}
+.table-available {
+  border-color: green;
+  color: green;
+}
+.table-occupied {
+  border-color: red;
+  color: red;
+}
