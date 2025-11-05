@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api/api";
+import api from "../api";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get("/api/users")
+    api.get("/users")
       .then(res => setUsers(res.data))
       .catch(err => console.error("Error loading users:", err));
   }, []);

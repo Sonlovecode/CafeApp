@@ -8,4 +8,9 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCreatedAtBetweenAndStatus(LocalDateTime from, LocalDateTime to, String status);
+
+    // Find all orders for a given table id
+    List<Order> findByTableId(Long tableId);
+    List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
 }

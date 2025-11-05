@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
 import "./BookingPage.css";
 
@@ -7,17 +8,18 @@ export default function BookingPage() {
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState([]);
   const [selectedTable, setSelectedTable] = useState(null);
-  const [orderedItems, setOrderedItems] = useState([]); // 🆕 món đã đặt
+  const [orderedItems, setOrderedItems] = useState([]);
+  const [showQR, setShowQR] = useState(false);
+  const [totalPay, setTotalPay] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // 🧭 Lấy dữ liệu bàn & menu
   const fetchData = async () => {
     try {
-      const t = await api.get("/tables");
-      const m = await api.get("/menu");
+      const [t, m] = await Promise.all([api.get("/tables"), api.get("/menu")]);
       setTables(t.data || []);
       setMenu(m.data || []);
     } catch (err) {
@@ -25,20 +27,22 @@ export default function BookingPage() {
     }
   };
 
-  // 🧩 Chọn bàn → xem món đã đặt
   const handleSelectTable = async (table) => {
     setSelectedTable(table);
     setCart([]);
     try {
       const res = await api.get(`/orders/table/${table.id}`);
-      setOrderedItems(res.data || []);
+      const data = res.data;
+
+      if (data && !Array.isArray(data)) setOrderedItems([data]);
+      else if (Array.isArray(data)) setOrderedItems(data);
+      else setOrderedItems([]);
     } catch (err) {
       console.error("Lỗi khi lấy món đã đặt:", err);
       setOrderedItems([]);
     }
   };
 
-  // ➕ Thêm món vào giỏ
   const addToCart = (item) => {
     if (!selectedTable) {
       alert("⚠️ Vui lòng chọn bàn trước khi thêm món!");
@@ -56,12 +60,10 @@ export default function BookingPage() {
     });
   };
 
-  // ❌ Xóa món khỏi giỏ
   const removeFromCart = (id) => {
     setCart((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // 🧾 Đặt món
   const placeOrder = async () => {
     if (!selectedTable) return alert("Vui lòng chọn bàn trước khi đặt!");
     if (cart.length === 0) return alert("Giỏ hàng trống!");
@@ -75,30 +77,49 @@ export default function BookingPage() {
     };
 
     try {
-      await api.post("/orders", orderPayload);
-      alert("✅ Đặt món thành công!");
-      setCart([]);
-      handleSelectTable(selectedTable); // cập nhật lại món đã đặt
-      fetchData();
+      const res = await api.post("/orders", orderPayload);
+      const createdOrder = res.data;
+
+      if (createdOrder) {
+        alert("✅ Đặt món thành công!");
+        setCart([]);
+        await handleSelectTable(selectedTable);
+        await fetchData();
+
+        navigate(`/order-success/${createdOrder.id}`, {
+          state: { order: createdOrder },
+        });
+      }
     } catch (err) {
       alert("❌ Lỗi khi đặt món!");
       console.error(err);
     }
   };
 
-  // 💵 Thanh toán
+  // 💵 Thanh toán (hiển thị mã QR)
   const handlePay = async () => {
     if (!selectedTable) return alert("Chưa chọn bàn!");
-    if (
-      !window.confirm(`Xác nhận thanh toán cho ${selectedTable.name}?`)
-    )
-      return;
+
+    // ✅ tính tổng tiền đơn hiện tại
+    const total =
+      orderedItems.flatMap((o) => o.items || []).reduce((sum, item) => {
+        const price = item.price || 0;
+        const quantity = item.quantity || 0;
+        return sum + price * quantity;
+      }, 0) || 0;
+
+    setTotalPay(total);
+    setShowQR(true); // mở popup QR
+  };
+
+  const confirmPayment = async () => {
     try {
       await api.post(`/orders/pay/${selectedTable.id}`);
       alert("💰 Thanh toán thành công!");
+      setShowQR(false);
       setSelectedTable(null);
       setOrderedItems([]);
-      fetchData();
+      await fetchData();
     } catch (err) {
       alert("❌ Lỗi khi thanh toán!");
       console.error(err);
@@ -118,13 +139,13 @@ export default function BookingPage() {
         <div className="table-list">
           {tables.map((t, index) => (
             <div
-              key={t.id}
+              key={t.id ?? `table-${index}`}
               className={`table-card ${
                 selectedTable?.id === t.id ? "selected" : ""
               } ${t.status === "AVAILABLE" ? "available" : "occupied"}`}
               onClick={() => handleSelectTable(t)}
             >
-              <h4>{t.name || `Bàn ${index + 1}`}</h4>
+              <h4>{t.name || `Bàn ${t.tableNumber || index + 1}`}</h4>
               <p className="status-text">
                 {t.status === "AVAILABLE" ? "Trống" : "Đã đặt"}
               </p>
@@ -133,32 +154,57 @@ export default function BookingPage() {
         </div>
       </section>
 
-      {/* --- Món đã đặt của bàn --- */}
+      {/* --- Món đã đặt --- */}
       {selectedTable && (
         <section>
           <h2>
-            Món đã đặt của <span className="highlight">{selectedTable.name}</span>
+            Món đã đặt của{" "}
+            <span className="highlight">
+              {selectedTable.name || `Bàn ${selectedTable.tableNumber}`}
+            </span>
           </h2>
+
           {orderedItems.length === 0 ? (
             <p>Chưa có món nào được đặt cho bàn này.</p>
           ) : (
             orderedItems.map((order) => (
               <div key={order.id} className="order-item">
                 <h4>Đơn #{order.id}</h4>
-                {order.items?.map((item) => (
-                  <div key={item.menuItemId}>
-                    {item.menuItemName} x{item.quantity}
+                {order.items?.map((item, iidx) => (
+                  <div key={iidx}>
+                    {/* ✅ Sửa: Hiển thị tên món đúng từ item.menuItem.name */}
+                    {item.menuItem?.name || "Không rõ món"} × {item.quantity} —{" "}
+                    {item.price?.toLocaleString()} đ
                   </div>
                 ))}
               </div>
             ))
           )}
+
           {orderedItems.length > 0 && (
             <button className="btn-pay" onClick={handlePay}>
               💵 Thanh toán
             </button>
           )}
         </section>
+      )}
+
+      {/* --- QR Modal --- */}
+      {showQR && (
+        <div className="qr-modal">
+          <div className="qr-content">
+            <h2>🔍 Quét mã để thanh toán</h2>
+            <img
+              src="https://qrcode-gen.com/images/qrcode-default.png"
+              alt="QR Code"
+              className="qr-image"
+            />
+            <p className="amount">💰 Số tiền: {totalPay.toLocaleString()} đ</p>
+            <button className="btn-ok" onClick={confirmPayment}>
+              ✅ Đã thanh toán
+            </button>
+          </div>
+        </div>
       )}
 
       {/* --- Thực đơn --- */}
@@ -175,7 +221,7 @@ export default function BookingPage() {
                 alt={m.name}
               />
               <h4>{m.name}</h4>
-              <p>{m.price} đ</p>
+              <p>{m.price.toLocaleString()} đ</p>
               <button onClick={() => addToCart(m)}>+ Thêm</button>
             </div>
           ))}
@@ -192,13 +238,13 @@ export default function BookingPage() {
             {cart.map((c) => (
               <div key={c.id} className="cart-item">
                 <span>
-                  {c.name} x{c.qty}
+                  {c.name} × {c.qty}
                 </span>
-                <span>{c.price * c.qty} đ</span>
+                <span>{(c.price * c.qty).toLocaleString()} đ</span>
                 <button onClick={() => removeFromCart(c.id)}>✕</button>
               </div>
             ))}
-            <h3>Tổng cộng: {total} đ</h3>
+            <h3>Tổng cộng: {total.toLocaleString()} đ</h3>
             <button className="btn-order" onClick={placeOrder}>
               ✅ Đặt món
             </button>

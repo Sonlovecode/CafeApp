@@ -29,56 +29,51 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    // ✅ Cấu hình chính cho Spring Security
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Bật CORS để React truy cập được
                 .cors().and()
-                .csrf(csrf -> csrf.disable()) // Tắt CSRF cho API
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**",     // Cho phép login/register
-                                "/h2-console/**",   // Cho phép truy cập H2 console
-                                "/v3/api-docs/**",  // Swagger (nếu dùng)
+                                "/api/auth/**",
+                                "/h2-console/**",
+                                "/v3/api-docs/**",
                                 "/swagger-ui/**"
                         ).permitAll()
-                        .anyRequest().authenticated() // Các request còn lại cần JWT
+                        .requestMatchers("/api/menu/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/tables/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
-                // Không tạo session vì JWT là stateless
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                // Thêm bộ lọc JWT trước UsernamePasswordAuthenticationFilter
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Cho phép hiển thị H2 console (tùy chọn)
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }
 
-    // ✅ Cấu hình CORS cho phép frontend React gọi API
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // 👈 React
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Cho phép gửi token kèm request
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
-    // ✅ Mã hóa mật khẩu
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ AuthenticationManager cho login
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
