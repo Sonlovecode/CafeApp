@@ -1,41 +1,35 @@
-# .github/workflows/docker-ci.yml
 name: Docker CI/CD
 
 on:
   push:
-    branches: [ main ]           # Chạy khi push lên branch main
+    branches: [ main ]
   pull_request:
-    branches: [ main ]           # Chạy khi PR vào main
+    branches: [ main ]
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest        # Chạy workflow trên Ubuntu
+    runs-on: ubuntu-latest
 
-    env:
-      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    strategy:
+      matrix:
+        service: [backend, frontend]
 
     steps:
-      # 1️⃣ Checkout code từ repo
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Login Docker Hub để push image
+      # 2️⃣ Login Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ env.DOCKER_HUB_USERNAME }}
-          password: ${{ env.DOCKER_HUB_ACCESS_TOKEN }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # 3️⃣ Build và push backend
-      - name: Build and push backend image
+      # 3️⃣ Build & Push image
+      - name: Build and push ${{ matrix.service }} image
         run: |
-          docker build -f cafeapp/Dockerfile -t ${{ env.DOCKER_HUB_USERNAME }}/my-backend:latest ./cafeapp
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/my-backend:latest
-
-      # 4️⃣ Build và push frontend
-      - name: Build and push frontend image
-        run: |
-          docker build -f cafeapp-frontend/Dockerfile -t ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest ./cafeapp-frontend
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest
-#ffdfdsfs
+          docker build -f ${{ matrix.service }}/Dockerfile \
+            -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-${{ matrix.service }}:latest \
+            ./${{ matrix.service }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-${{ matrix.service }}:latest
