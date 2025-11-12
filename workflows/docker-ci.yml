@@ -38,3 +38,4 @@ jobs:
         run: |
           docker build -f cafeapp-frontend/Dockerfile -t ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest ./cafeapp-frontend
           docker push ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest
+#ffdfdsfs
