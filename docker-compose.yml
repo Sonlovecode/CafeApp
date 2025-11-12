@@ -15,6 +15,7 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
+    image: cafeapp-backend:latest
     build: ./cafeapp
     container_name: cafeapp-backend
     ports:
