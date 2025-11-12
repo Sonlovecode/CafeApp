@@ -19,8 +19,6 @@ services:
     container_name: cafeapp-backend
     ports:
       - "8081:8081"
-    environment:
-    
     depends_on:
       - db
 
