@@ -1,4 +1,4 @@
-name: Docker CI/CD
+name: Docker CI/CD Multi-Platform
 
 on:
   push:
@@ -19,21 +19,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Login Docker Hub
+      # 2️⃣ Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # 3️⃣ Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ env.DOCKER_HUB_USERNAME }}
           password: ${{ env.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # 3️⃣ Build & push backend
+      # 4️⃣ Build & push backend image
       - name: Build and push backend image
         run: |
-          docker build -f cafeapp/Dockerfile -t ${{ env.DOCKER_HUB_USERNAME }}/my-backend:latest ./cafeapp
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/my-backend:latest
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -f cafeapp/Dockerfile \
+            -t ${{ env.DOCKER_HUB_USERNAME }}/my-backend:latest \
+            --push \
+            ./cafeapp
 
-      # 4️⃣ Build & push frontend
+      # 5️⃣ Build & push frontend image
       - name: Build and push frontend image
         run: |
-          docker build -f cafeapp-frontend/Dockerfile -t ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest ./cafeapp-frontend
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -f cafeapp-frontend/Dockerfile \
+            -t ${{ env.DOCKER_HUB_USERNAME }}/my-frontend:latest \
+            --push \
+            ./cafeapp-frontend
