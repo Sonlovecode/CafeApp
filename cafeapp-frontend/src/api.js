@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8081/api';
+export const API_BASE_URL = 'http://3.106.128.235/api';
 
 import axios from 'axios';
 const api = axios.create({ baseURL: API_BASE_URL });
