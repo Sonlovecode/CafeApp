@@ -11,9 +11,16 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: 123456
     ports:
-      - "3307:3306" 
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cafeapp-network
 
   backend:
     image: caoleson04/my-backend:latest
@@ -22,22 +29,39 @@ services:
     ports:
       - "8081:8081"
     environment:
-      # Thêm biến môi trường nếu backend cần
+      # Database configuration
       DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: cafeapp
       DB_USER: root
       DB_PASSWORD: 123456
-      DB_NAME: cafeapp
+      # Server config
+      SERVER_PORT: 8081
+      # CORS - allow frontend to call backend
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:80,http://3.106.128.235,http://3.106.128.235:80
+      # JWT
+      JWT_SECRET: MySuperSecretKey123456789012345678901234567890
+      JWT_EXPIRATION_MS: 86400000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - cafeapp-network
 
   frontend:
     image: caoleson04/my-frontend:latest
     container_name: cafeapp-frontend
     restart: always
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - backend
+    networks:
+      - cafeapp-network
 
 volumes:
   db_data:
+
+networks:
+  cafeapp-network:
+    driver: bridge

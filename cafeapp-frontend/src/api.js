@@ -1,4 +1,5 @@
-export const API_BASE_URL = 'http://3.106.128.235/api';
+// Get API base URL from environment variable or default to localhost
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api';
 
 import axios from 'axios';
 const api = axios.create({ baseURL: API_BASE_URL });
