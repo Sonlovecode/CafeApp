@@ -10,7 +10,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: 123456
     ports:
-      - "3307:3306"  # đổi sang 3307 để tránh trùng với MySQL khác trên host
+      - "3307:3306" 
     volumes:
       - db_data:/var/lib/mysql
 
@@ -21,9 +21,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/cafeapp
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 123456
+     
     depends_on:
       - db
 
