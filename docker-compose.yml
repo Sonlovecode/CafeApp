@@ -1,4 +1,5 @@
-# docker-compose.yml
+version: "3.8"
+
 services:
   db:
     image: mysql:8
@@ -21,7 +22,11 @@ services:
     ports:
       - "8081:8081"
     environment:
-     
+      # Thêm biến môi trường nếu backend cần
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: 123456
+      DB_NAME: cafeapp
     depends_on:
       - db
 
